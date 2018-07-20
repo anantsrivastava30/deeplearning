@@ -229,8 +229,10 @@ def predict(params, X):
 
 X, Y = load_planar_dataset()
 
+print(X.shape, Y.shape)
+
 # Visualize the data
-plt.scatter(X[0, :], X[1, :], c=Y, s=40)
+plt.scatter(X[0, :], X[1, :], c=Y.ravel(), s=40, cmap=plt.cm.Spectral)
 plt.show()
 
 shape_X = X.shape
@@ -242,13 +244,13 @@ print('The shape of X is: ' + str(shape_X))
 print('The shape of Y is: ' + str(shape_Y))
 print('I have m = %d training examples!' % m)
 
-# parameters = nn_model(X, Y, n_h=4, num_iterations=10000, print_cost=True)
-# plot_decision_boundary(lambda x: predict(parameters, x.T), X, Y)
-# plt.title("Decision Boundary for hidden layer size " + str(4))
-# plt.show()
+parameters = nn_model(X, Y, n_h=4, num_iterations=10000, print_cost=True)
+plot_decision_boundary(lambda x: predict(parameters, x.T), X, Y)
+plt.title("Decision Boundary for hidden layer size " + str(4))
+plt.show()
 
-# predictions = predict(parameters, X)
-# print('Accuracy: %d' % float((np.dot(Y, predictions.T) + np.dot(1-Y, 1-predictions.T))/float(Y.size)*100) + '%')
+predictions = predict(parameters, X)
+print('Accuracy: %d' % float((np.dot(Y, predictions.T) + np.dot(1-Y, 1-predictions.T))/float(Y.size)*100) + '%')
 
 N = 200
 noisy_circles = sklearn.datasets.make_circles(n_samples=N, factor=.5, noise=.3)
@@ -271,7 +273,7 @@ for dataset in datasets.values():
         Y = Y % 2
 
     # Visualize the data
-    plt.scatter(X[0, :], X[1, :], c=Y, s=40)
+    plt.scatter(X[0, :], X[1, :], c=Y.ravel(), s=40, cmap=plt.cm.Spectral)
     plt.show()
     parameters = nn_model(X, Y, n_h=4, num_iterations=10000, print_cost=True)
     plot_decision_boundary(lambda x: predict(parameters, x.T), X, Y)

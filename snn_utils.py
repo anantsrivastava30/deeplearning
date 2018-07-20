@@ -19,7 +19,7 @@ def plot_decision_boundary(model, X, y):
     plt.contourf(xx, yy, Z)
     plt.ylabel('x2')
     plt.xlabel('x1')
-    plt.scatter(X[0, :], X[1, :], c=y)
+    plt.scatter(X[0, :], X[1, :], c=y.ravel(), cmap=plt.cm.Spectral)
 
 def sigmoid(x):
     """
