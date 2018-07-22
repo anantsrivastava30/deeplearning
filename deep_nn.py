@@ -1,7 +1,7 @@
 import numpy as np
 import h5py
 import matplotlib.pyplot as plt
-from dnn_utils import sigmoid, sigmoid_backward, relu, relu_backward
+from dnn_utils import sigmoid, sigmoid_backward, relu, relu_backward, print_mislabeled_images
 from lr_utils import load_dataset
 
 plt.rcParams['figure.figsize'] = (5.0, 4.0) # set default size of plots
@@ -9,33 +9,6 @@ plt.rcParams['image.interpolation'] = 'nearest'
 plt.rcParams['image.cmap'] = 'gray'
 
 np.random.seed(1)
-
-# def initialize_parameters_deep(layer_dims):
-#     """
-#     Arguments:
-#     layer_dims -- python array (list) containing the dimensions of each layer in our network
-    
-#     Returns:
-#     parameters -- python dictionary containing your parameters "W1", "b1", ..., "WL", "bL":
-#                     Wl -- weight matrix of shape (layer_dims[l], layer_dims[l-1])
-#                     bl -- bias vector of shape (layer_dims[l], 1)
-#     """
-    
-#     np.random.seed(1)
-#     parameters = {}
-#     L = len(layer_dims)            # number of layers in the network
-
-#     for l in range(1, L):
-#         parameters['W' + str(l)] = np.random.randn(layer_dims[l], layer_dims[l-1]) / np.sqrt(layer_dims[l-1]) #*0.01
-#         parameters['b' + str(l)] = np.zeros((layer_dims[l], 1))
-        
-#         assert(parameters['W' + str(l)].shape == (layer_dims[l], layer_dims[l-1]))
-#         assert(parameters['b' + str(l)].shape == (layer_dims[l], 1))
-
-        
-#     return parameters
-
-
 
 def initialize_parameters_deep(L):
 	"""initialize all the W's and b's
@@ -47,7 +20,7 @@ def initialize_parameters_deep(L):
 	params = {}
 
 	for l in range(1, len(L)):
-		# * 0.01 -> makes the gradient closer to 0 
+		print(np.sqrt(L[l-1]))
 		params['W'+str(l)] = np.random.randn(L[l], L[l-1]) / np.sqrt(L[l-1])
 		params['b'+str(l)] = np.zeros((L[l], 1)) 
 
@@ -78,30 +51,30 @@ def linear_forward(A, W, b):
 
 
 def linear_activation_forward(A_prev, W, b, activation):
-    """activation part of forward prop
+	"""activation part of forward prop
 
-    Arguments:
-    	A_prev {np array} -- [(l-1 x m)]
-    	W {[np.array]} -- [(l x l-1)]
-    	b {[np.array]} -- [(1 x b)]
-    	activation {string} -- [relu or sigmoid]
+	Arguments:
+		A_prev {np array} -- [(l-1 x m)]
+		W {[np.array]} -- [(l x l-1)]
+		b {[np.array]} -- [(1 x b)]
+		activation {string} -- [relu or sigmoid]
 
-    Returns:
-    	[np.array] -- [A , (A_prev, W , b, Z)]
-    """ 
+	Returns:
+		[np.array] -- [A , (A_prev, W , b, Z)]
+	""" 
 
-    if activation == "sigmoid":
-        Z, linear_cache = linear_forward(A_prev, W, b)
-        A, activation_cache = sigmoid(Z) 
+	if activation == "sigmoid":
+		Z, linear_cache = linear_forward(A_prev, W, b)
+		A, activation_cache = sigmoid(Z) 
 
-    elif activation == "relu":
-        Z, linear_cache = linear_forward(A_prev, W, b)
-        A, activation_cache = relu(Z)
+	elif activation == "relu":
+		Z, linear_cache = linear_forward(A_prev, W, b)
+		A, activation_cache = relu(Z)
 	
-    assert (A.shape == (W.shape[0], A_prev.shape[1]))
-    cache = (linear_cache, activation_cache)
+	assert (A.shape == (W.shape[0], A_prev.shape[1]))
+	cache = (linear_cache, activation_cache)
 
-    return A, cache
+	return A, cache
 
 
 def L_model_forward(X, params):
@@ -257,71 +230,97 @@ def L_model_backward(AL, Y, caches):
 
 
 def update_parameters(parameters, grads, learning_rate):
-    """Update parameters using gradient descent
-    
-    Arguments:
-        params {dict} -- [Wl, bl]
-        grads {dict} -- [dAl, dW1, db1]
-        learning_rate {scalor} -- [convergence rate]
-    
-    Returns:
-        [type] -- [description]
-    """
-    
-    L = len(parameters) // 2 # number of layers in the neural network
+	"""Update parameters using gradient descent
+	
+	Arguments:
+		params {dict} -- [Wl, bl]
+		grads {dict} -- [dAl, dW1, db1]
+		learning_rate {scalor} -- [convergence rate]
+	
+	Returns:
+		[type] -- [description]
+	"""
+	
+	L = len(parameters) // 2 # number of layers in the neural network
 
-    for l in range(L):
-        parameters["W" + str(l+1)] -= learning_rate * grads["dW" + str(l+1)]
-        parameters["b" + str(l+1)] -= learning_rate * grads["db" + str(l+1)]
-    return parameters
+	for l in range(L):
+		parameters["W" + str(l+1)] -= learning_rate * grads["dW" + str(l+1)]
+		parameters["b" + str(l+1)] -= learning_rate * grads["db" + str(l+1)]
+	return parameters
 
 
 def L_layer_model(X, Y, layers_dim, learning_rate = 0.0075, num_iterations = 3000):
-    """impliment a layred Neural Network: [LINEAR->RELU]*(L-1)->[LINEAR->SIGMOID]
-    
-    Arguments:
-        X {np array} -- [the input array (feature x m)]
-        Y {np array} -- [the list of truth values]
-        layers_dim {list} -- [12288, 20, 7, 5, 1]
-    
-    Keyword Arguments:
-        learning_rate {number} -- [description] (default: {0.0075})
-        num_iterations {number} -- [description] (default: {3000})
-    Return:
-        params -- parameters learnt by the model.
-    """
+	"""impliment a layred Neural Network: [LINEAR->RELU]*(L-1)->[LINEAR->SIGMOID]
+	
+	Arguments:
+		X {np array} -- [the input array (feature x m)]
+		Y {np array} -- [the list of truth values]
+		layers_dim {list} -- [12288, 20, 7, 5, 1]
+	
+	Keyword Arguments:
+		learning_rate {number} -- [description] (default: {0.0075})
+		num_iterations {number} -- [description] (default: {3000})
+	Return:
+		params -- parameters learnt by the model.
+	"""
 
-    np.random.seed(1)
-    costs = []
+	np.random.seed(1)
+	costs = []
 
-    # Parameters initialization
-    params = initialize_parameters_deep(layers_dim)
+	# Parameters initialization
+	params = initialize_parameters_deep(layers_dim)
 
-    #gradient descent 
-    for i in range(0, num_iterations):
-        # forward propogation
-        AL, caches = L_model_forward(X, params)
+	#gradient descent 
+	for i in range(0, num_iterations):
+		# forward propogation
+		AL, caches = L_model_forward(X, params)
 
-        # compute cost
-        cost = compute_cost(AL, Y)
+		# compute cost
+		cost = compute_cost(AL, Y)
 
-        # back propogation
-        grads = L_model_backward(AL, Y, caches)
+		# back propogation
+		grads = L_model_backward(AL, Y, caches)
 
-        #upgrade params
-        params = update_parameters(params, grads, learning_rate)
+		#upgrade params
+		params = update_parameters(params, grads, learning_rate)
 
-        if i%100 == 0:
-            print("Cost after iteration %i %f" %(i, cost))
-            costs.append(cost)
+		if i%100 == 0:
+			print("Cost after iteration %i %f" %(i, cost))
+			costs.append(cost)
 
-    plt.plot(np.squeeze(costs))
-    plt.ylabel('cost')
-    plt.xlabel('iterations (per tens)')
-    plt.title("Learning rate =" + str(learning_rate))
-    plt.show()
+	plt.plot(np.squeeze(costs))
+	plt.ylabel('cost')
+	plt.xlabel('iterations (per tens)')
+	plt.title("Learning rate =" + str(learning_rate))
+	plt.show()
 
-    return params
+	return params
+
+
+def predict(X, y, params):
+	"""predict
+	
+	[description]
+	
+	Arguments:
+		X {[type]} -- [description]
+		y {[type]} -- [description]
+		params {[type]} -- [description]
+	"""
+	m = X.shape[1]
+	n = len(params)
+	p = np.zeros((1,m))
+
+	probas, cache = L_model_forward(X, params)
+
+	for i in range(0, probas.shape[1]):
+		if probas[0, i] > 0.5:
+			p[0, i] = 1
+		else:
+			p[0,i] = 0
+
+	print("accuracy = " + str(np.sum((p==y)/m)))
+	return p
 
 
 train_x_orig, train_y, test_x_orig, test_y, classes = load_dataset()
@@ -354,6 +353,11 @@ print ("test_x's shape: " + str(test_x.shape))
 layers_dims = [12288, 20, 7, 5, 1]
 
 parameters = L_layer_model(train_x, train_y, layers_dims, num_iterations = 2500)
+
+pred_test = predict(test_x, test_y, parameters)
+print(pred_test)
+
+print_mislabeled_images(classes, test_x, test_y, pred_test)
 
 
 
